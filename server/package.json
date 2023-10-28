@@ -1,11 +1,26 @@
 {
   "name": "clipsync",
-  "module": "app.ts",
-  "type": "module",
+  "module": "src/app.ts",
+  "scripts": {
+    "dev": "ts-node-esm src/app.ts",
+    "start": "node dist/app.js",
+    "build": "tsc -p ."
+  },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/express": "^4.17.20",
+    "@types/http-errors": "^2.0.3",
+    "@types/morgan": "^1.9.7",
+    "@types/node": "^20.8.9",
+    "bun-types": "latest",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-errors": "^2.0.0",
+    "morgan": "^1.10.0"
   }
 }
