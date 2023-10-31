@@ -3,7 +3,7 @@ import * as readline from "readline";
 import clipBoardListener from "./listener.js";
 import clipboard from "clipboardy";
 
-const socket = io('http://localhost:4500', {
+const socket = io('http://172.16.0.80:4500', {
     transports: ["websocket", "polling"],
     autoConnect: true,
 });
