@@ -1,0 +1,17 @@
+{
+  "name": "clipsync-client",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/socket.io": "^3.0.2",
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "clipboardy": "^4.0.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2"
+  }
+}
