@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 class ClipboardEventListener extends EventEmitter {
-    child: any;
+    child;
     constructor() {
         super();
         this.child = null;
@@ -27,8 +27,8 @@ class ClipboardEventListener extends EventEmitter {
             throw 'Not yet supported';
         }
 
-        this.child.stdout.on('data', (data: any) => {
-            if (data.trim() === 'CLIPBOARD_CHANGE') {
+        this.child.stdout.on('data', (data) => {
+            if (data.trim() === 'clipboard_change') {
                 this.emit('change');
             }
         });
