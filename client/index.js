@@ -4,7 +4,7 @@ import clipboardListener from "clipboard-event";
 import clipboard from "clipboardy";
 
 
-const socket = io('http://localhost:4500', {
+const socket = io('http://172.20.10.2:4500', {
     transports: ["websocket", "polling"],
     autoconnect: true,
 });
