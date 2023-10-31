@@ -8,6 +8,10 @@ const socket = io('http://localhost:4500', {
     autoConnect: true,
 });
 
+// Handle Copy event
+socket.on('sync', (clip: any) => {
+    clipboard.writeSync(clip);
+});
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
