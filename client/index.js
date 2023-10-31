@@ -1,16 +1,18 @@
 import { io } from "socket.io-client";
 import * as readline from "readline";
-import clipBoardListener from "./listener.js";
+import clipboardListener from "clipboard-event";
 import clipboard from "clipboardy";
 
-const socket = io('http://172.16.0.80:4500', {
+
+const socket = io('http://localhost:4500', {
     transports: ["websocket", "polling"],
-    autoConnect: true,
+    autoconnect: true,
 });
 
 socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
 });
+
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -24,25 +26,42 @@ function generateSessionID() {
 
 let sessionID;
 
+function listenToClipboard() {
+    let lastClip = clipboard.readSync();
+
+    function checkClipboard() {
+        const clip = clipboard.readSync();
+        if (clip !== lastClip) {
+            // Clipboard content has changed
+            socket.emit('copy', sessionID, clip);
+            lastClip = clip;
+        }
+    }
+
+    // Check the clipboard every second
+    setInterval(checkClipboard, 500);
+}
 rl.question(`1. Start Session \n2. Join Session \n`, (reply) => {
     switch (reply) {
         case '1':
             sessionID = generateSessionID();
             console.log(`This is your session ID: ${sessionID}`);
             socket.emit('start', sessionID);
-            clipBoardListener.startListening();
+            clipboardListener.startListening();
+            listenToClipboard();
             break;
         case '2':
             rl.question(`Enter your session ID: `, (res) => {
                 socket.emit('join', res);
                 sessionID = res;
-                clipBoardListener.startListening();
+                clipboardListener.startListening();
+                listenToClipboard();
             });
             break;
     }
 });
 
-clipBoardListener.on('change', () => {
+clipboardListener.on('change', () => {
     const clip = clipboard.readSync();
     console.log(clip);
     socket.emit('copy', sessionID, clip);
