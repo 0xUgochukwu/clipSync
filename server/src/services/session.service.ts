@@ -5,6 +5,7 @@ export const Socket = (io: any) => {
         // Start Session 
         socket.on('start', (sessionID: string) => {
             socket.join(sessionID);
+            socket.sessionID = sessionID
             console.log(`${socket.id}, Started Session: ${sessionID}`)
         });
 
@@ -18,7 +19,8 @@ export const Socket = (io: any) => {
 
         // Handle copy on client
         socket.on('copy', (sessionID: string, clip: any) => {
-            console.log(`${socket.id} in ${sessionID} Copied something: ${clip}`);
+            console.log("Heyyy", socket.sessionID)
+            //console.log(`${socket.id} in ${sessionID} Copied something: ${clip}`);
 
             socket.to(sessionID).emit('sync', clip);
         });

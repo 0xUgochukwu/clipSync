@@ -4,7 +4,7 @@ import clipboard from "clipboardy";
 
 
 
-const socket = io('http://172.20.10.2:4500', {
+const socket = io('http://localhost:4500', {
     transports: ["websocket", "polling"],
     autoconnect: true,
 });
@@ -46,6 +46,9 @@ rl.question(`1. Start Session \n2. Join Session \n`, (reply) => {
             sessionID = generateSessionID();
             console.log(`This is your session ID: ${sessionID}`);
             socket.emit('start', sessionID);
+            socket.auth = {
+                sessionID: sessionID
+            };
             listenToClipboard();
             break;
         case '2':
