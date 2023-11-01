@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:clipboard_watcher/clipboard_watcher.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart';
 
 
 // @pragma('vm:entry-point')
@@ -101,7 +101,10 @@ class ClipboardListenerApp extends StatefulWidget {
   ClipboardListenerApp({Key? key}) : super(key: key);
   final TextEditingController sessionIDController = TextEditingController();
   var sessionID;
-  IO.Socket socket = IO.io('http://18.170.67.126');
+  Socket socket = io('http://18.170.67.126', OptionBuilder()
+      .setTransports(['websocket', 'polling'])
+      .disableAutoConnect()
+  );
 
 
   @override

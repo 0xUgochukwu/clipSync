@@ -6,7 +6,7 @@ import clipboard from "clipboardy";
 
 const socket = io('http://localhost:4500', {
     transports: ["websocket", "polling"],
-    autoconnect: true,
+    autoconnect: false,
 });
 let sessionID;
 
@@ -21,8 +21,15 @@ const rl = readline.createInterface({
 });
 
 function generateSessionID() {
-    const code = Math.floor(1000 + Math.random() * 9000);
-    return code.toString();
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+
+    for (let i = 0; i < 6; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        result += charset.charAt(randomIndex);
+    }
+
+    return result;
 }
 
 
@@ -32,7 +39,7 @@ function listenToClipboard() {
     function checkClipboard() {
         const clip = clipboard.readSync();
         if (clip !== lastClip) {
-            socket.emit('copy', sessionID, clip);
+            socket.emit('copy', clip);
             lastClip = clip;
         }
     }
@@ -45,10 +52,11 @@ rl.question(`1. Start Session \n2. Join Session \n`, (reply) => {
         case '1':
             sessionID = generateSessionID();
             console.log(`This is your session ID: ${sessionID}`);
-            socket.emit('start', sessionID);
-            socket.auth = {
-                sessionID: sessionID
-            };
+            socket.io.opts.query = {
+                sessionID,
+            }
+            socket.connect();
+            socket.emit('join', sessionID);
             listenToClipboard();
             break;
         case '2':
