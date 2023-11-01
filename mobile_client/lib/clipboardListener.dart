@@ -101,10 +101,10 @@ class ClipboardListenerApp extends StatefulWidget {
   ClipboardListenerApp({Key? key}) : super(key: key);
   final TextEditingController sessionIDController = TextEditingController();
   var sessionID;
-  Socket socket = io('http://18.170.67.126', OptionBuilder()
-      .setTransports(['websocket', 'polling'])
-      .disableAutoConnect()
-  );
+  Socket socket = io('http://18.170.67.126', <String, dynamic>{
+    'autoConnect': false,
+    'transports': ['websocket'],
+  });
 
 
   @override
@@ -116,7 +116,6 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
   void initState() {
     clipboardWatcher.addListener(this);
     super.initState();
-
   }
 
   @override
@@ -144,6 +143,13 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
                   final reply = widget.sessionIDController.text;
                   widget.socket.emit('join', reply);
                   widget.sessionID = reply;
+                  widget.socket.io.options?['query'] = {'sessionID': reply};
+                  widget.socket.connect();
+                  clipboardWatcher.start();
+
+                  widget.socket.on('sync', (clip) {
+                    Clipboard.setData(ClipboardData(text: clip));
+                  });
 
                   // Implement the logic to join the session with the provided number.
                 },
@@ -158,11 +164,10 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
 
   @override
   void onClipboardChanged() async {
-    ClipboardData? newClip =
+    ClipboardData? clipData =
     await Clipboard.getData(Clipboard.kTextPlain);
-    widget.socket.sessionID = '54333';
-    widget.socket.emit('copy', widget.sessionID, newClip?.text);
-    print(newClip?.text);
+    widget.socket.emit('copy', clipData?.text);
+    print(clipData?.text);
   }
 
 

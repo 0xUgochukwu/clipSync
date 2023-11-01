@@ -3,6 +3,6 @@
          the Flutter tool needs it to communicate with the running application
          to allow setting breakpoints, to provide hot reload, etc.
     -->
-    <service android:name="com.clipSync.service.ForegroundService" />
+<!--    <service android:name="com.clipSync.service.ForegroundService" />-->
     <uses-permission android:name="android.permission.INTERNET"/>
 </manifest>
