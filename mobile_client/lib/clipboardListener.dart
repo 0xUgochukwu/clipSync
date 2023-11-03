@@ -1,110 +1,123 @@
+import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:clipboard_watcher/clipboard_watcher.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 
+final TextEditingController sessionIDController = TextEditingController();
+Socket socket = io('http://18.170.67.126', <String, dynamic>{
+  'autoConnect': false,
+  'transports': ['websocket'],
+});
 
-// @pragma('vm:entry-point')
-// void startCallback() {
-//   // The setTaskHandler function must be called to handle the task in the background.
-//   FlutterForegroundTask.setTaskHandler(clipboardListenerTaskHandler());
-// }
-//
-// class clipboardListenerTaskHandler extends TaskHandler {
-//   SendPort? _sendPort;
-//   int _eventCount = 0;
-//
-//   // Called when the task is started.
-//   @override
-//   void onStart(DateTime timestamp, SendPort? sendPort) async {
-//
-//   }
-//
-//   // Called every [interval] milliseconds in [ForegroundTaskOptions].
-//   @override
-//   void onRepeatEvent(DateTime timestamp, SendPort? sendPort) async {
-//     FlutterForegroundTask.updateService(
-//       notificationTitle: 'MyTaskHandler',
-//       notificationText: 'eventCount: $_eventCount',
-//     );
-//
-//     // Send data to the main isolate.
-//     sendPort?.send(_eventCount);
-//
-//     _eventCount++;
-//   }
-//
-//   // Called when the notification button on the Android platform is pressed.
-//   @override
-//   void onDestroy(DateTime timestamp, SendPort? sendPort) async {
-//     print('onDestroy');
-//   }
-//
-//   // Called when the notification button on the Android platform is pressed.
-//   @override
-//   void onNotificationButtonPressed(String id) {
-//     print('onNotificationButtonPressed >> $id');
-//   }
-//
-//   // Called when the notification itself on the Android platform is pressed.
-//   //
-//   // "android.permission.SYSTEM_ALERT_WINDOW" permission must be granted for
-//   // this function to be called.
-//   @override
-//   void onNotificationPressed() {
-//     // Note that the app will only route to "/resume-route" when it is exited so
-//     // it will usually be necessary to send a message through the send port to
-//     // signal it to restore state when the app is already started.
-//     FlutterForegroundTask.launchApp("/resume-route");
-//     _sendPort?.send('onNotificationPressed');
-//   }
-// }
-//
-// void _initForegroundTask() {
-//   FlutterForegroundTask.init(
-//     androidNotificationOptions: AndroidNotificationOptions(
-//       channelId: 'foreground_service',
-//       channelName: 'Foreground Service Notification',
-//       channelDescription: 'This notification appears when the foreground service is running.',
-//       channelImportance: NotificationChannelImportance.LOW,
-//       priority: NotificationPriority.LOW,
-//       iconData: const NotificationIconData(
-//         resType: ResourceType.mipmap,
-//         resPrefix: ResourcePrefix.ic,
-//         name: 'launcher',
-//       ),
-//       buttons: [
-//         const NotificationButton(id: 'sendButton', text: 'Send'),
-//         const NotificationButton(id: 'testButton', text: 'Test'),
-//       ],
-//     ),
-//     iosNotificationOptions: const IOSNotificationOptions(
-//       showNotification: true,
-//       playSound: false,
-//     ),
-//     foregroundTaskOptions: const ForegroundTaskOptions(
-//       interval: 5000,
-//       isOnceEvent: false,
-//       autoRunOnBoot: true,
-//       allowWakeLock: true,
-//       allowWifiLock: true,
-//     ),
-//   );
-// }
+
+
+final FlutterLocalNotificationsPlugin flutterLocalPlugin =FlutterLocalNotificationsPlugin();
+const AndroidNotificationChannel notificationChannel=AndroidNotificationChannel(
+    "clipSync",
+    "clipSync just started",
+    description: "clipSync is waiting to get started",
+    importance: Importance.high
+);
+
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await initservice();
+  runApp(ClipboardListenerApp());
+}
+
+Future<void> initservice()async{
+  var service=FlutterBackgroundService();
+  //set for ios
+  if(Platform.isIOS){
+    await flutterLocalPlugin.initialize(const InitializationSettings(
+        iOS: DarwinInitializationSettings()
+    ));
+  }
+
+  await flutterLocalPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(notificationChannel);
+
+  //service init and start
+  await service.configure(
+      iosConfiguration: IosConfiguration(
+          onBackground: iosBackground,
+          onForeground: onStart
+      ),
+      androidConfiguration: AndroidConfiguration(
+          onStart: onStart,
+          autoStart: true,
+          isForegroundMode: true,
+          notificationChannelId: "clipSync",//comment this line if show white screen and app crash
+          initialNotificationTitle: "clipSync",
+          initialNotificationContent: "clipSync is Running",
+          foregroundServiceNotificationId: 90
+      )
+  );
+  service.startService();
+
+  //for ios enable background fetch from add capability inside background mode
+
+}
+
+//onstart method
+@pragma("vm:entry-point")
+void onStart(ServiceInstance service){
+  DartPluginRegistrant.ensureInitialized();
+
+  service.on("setAsForeground").listen((event) {
+    print("foreground ===============");
+  });
+
+  service.on("setAsBackground").listen((event) {
+    print("background ===============");
+  });
+
+  service.on("stopService").listen((event) {
+    service.stopSelf();
+  });
+
+  //display notification as service
+  Timer.periodic(Duration(seconds: 5), (timer) {
+    flutterLocalPlugin.show(
+        90,
+        "clipSync",
+        "Awsome ${DateTime.now()}",
+        NotificationDetails(android:AndroidNotificationDetails("coding is life","coding is life service",ongoing: true,icon: "app_icon")));
+  });
+  print("Background service ${DateTime.now()}") ;
+
+
+
+  final reply = sessionIDController.text;
+  socket.emit('join', reply);
+  socket.io.options?['query'] = {'sessionID': reply};
+  socket.connect();
+  clipboardWatcher.start();
+
+  socket.on('sync', (clip) {
+    Clipboard.setData(ClipboardData(text: clip));
+  });
+}
+
+//iosbackground
+@pragma("vm:entry-point")
+Future<bool> iosBackground(ServiceInstance service)async{
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+
+  return true;
+}
+
 
 
 class ClipboardListenerApp extends StatefulWidget {
   ClipboardListenerApp({Key? key}) : super(key: key);
-  final TextEditingController sessionIDController = TextEditingController();
-  var sessionID;
-  Socket socket = io('http://18.170.67.126', <String, dynamic>{
-    'autoConnect': false,
-    'transports': ['websocket'],
-  });
 
 
   @override
@@ -131,7 +144,7 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
-                  controller: widget.sessionIDController,
+                  controller: sessionIDController,
                   decoration: InputDecoration(
                     hintText: 'Enter a session number...',
                   ),
@@ -140,17 +153,7 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
               ElevatedButton(
                 child: const Text('Join Session'),
                 onPressed: () {
-                  final reply = widget.sessionIDController.text;
-                  widget.socket.emit('join', reply);
-                  widget.sessionID = reply;
-                  widget.socket.io.options?['query'] = {'sessionID': reply};
-                  widget.socket.connect();
-                  clipboardWatcher.start();
-
-                  widget.socket.on('sync', (clip) {
-                    Clipboard.setData(ClipboardData(text: clip));
-                  });
-
+                  FlutterBackgroundService().startService();
                   // Implement the logic to join the session with the provided number.
                 },
               ),
@@ -166,7 +169,7 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
   void onClipboardChanged() async {
     ClipboardData? clipData =
     await Clipboard.getData(Clipboard.kTextPlain);
-    widget.socket.emit('copy', clipData?.text);
+    socket.emit('copy', clipData?.text);
     print(clipData?.text);
   }
 
