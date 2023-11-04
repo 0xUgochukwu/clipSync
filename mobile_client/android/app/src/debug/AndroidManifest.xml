@@ -5,4 +5,7 @@
     -->
 <!--    <service android:name="com.clipSync.service.ForegroundService" />-->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
 </manifest>

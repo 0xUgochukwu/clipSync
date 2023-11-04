@@ -8,7 +8,6 @@ import 'package:clipboard_watcher/clipboard_watcher.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:socket_io_client/socket_io_client.dart';
-import 'package:clipboard_monitor/clipboard_monitor.dart';
 
 
 final TextEditingController sessionIDController = TextEditingController();
@@ -66,7 +65,7 @@ Future<void> initservice()async{
 
 //onstart method
 @pragma("vm:entry-point")
-void onStart(ServiceInstance service) {
+void onStart(ServiceInstance service){
   DartPluginRegistrant.ensureInitialized();
 
   service.on("setAsForeground").listen((event) {
@@ -83,7 +82,7 @@ void onStart(ServiceInstance service) {
 
   String? reply;
   String? lastClip;
-  String? currentClip;
+  ClipboardData? currentClip;
   Socket socket = io('http://18.170.67.126:4500', <String, dynamic>{
     'autoConnect': false,
     'transports': ['websocket'],
@@ -95,57 +94,33 @@ void onStart(ServiceInstance service) {
   reply = sessionIDController.text;
   socket.emit('join', reply);
 
-  String? text;
-
 
   socket.on('sync', (clip) {
     Clipboard.setData(ClipboardData(text: clip));
   });
 
-  void onClipboardText(String text) {
-    print("clipboard changed: $text");
-  }
-  ClipboardMonitor.registerCallback(onClipboardText);
-
-
-
-
 
   //display notification as service
-  Timer.periodic(Duration(milliseconds: 500), (timer) async {
+  Timer.periodic(Duration(seconds: 2), (timer) async {
+    currentClip = await Clipboard.getData(Clipboard.kTextPlain);
+    print(lastClip);
+    print(currentClip);
 
-    print("Called");
-      // Do what ever you want with the value.
-      print("Called 2 ${currentClip}");
+    if (currentClip?.text != lastClip) {
+      print("Clipboard data changed: ${currentClip?.text}");
+      flutterLocalPlugin.show(
+          90,
+          "clipSync",
+          "Copied ${DateTime.now()}",
+          NotificationDetails(android:AndroidNotificationDetails("clipSync","clipSync is Running",ongoing: true,icon: "app_icon")));
+      socket.emit('copy', currentClip?.text);
+      lastClip = currentClip?.text;
 
+    }
 
+  });
+  print("Background service ${DateTime.now()}") ;
 
-      if (currentClip != lastClip) {
-        print("Clipboard data changed: ${currentClip}");
-        flutterLocalPlugin.show(
-            90,
-            "clipSync",
-            "Copied ${DateTime.now()}",
-            NotificationDetails(android: AndroidNotificationDetails("clipSync", "clipSync is Running", ongoing: true, icon: "app_icon")));
-        socket.emit('copy', currentClip);
-        lastClip = currentClip;
-      }
-
-    });
-
-
-
-    // final reader = await ClipboardReader.readClipboard();
-    // if (reader.canProvide(Formats.plainText)) {
-    //   text = await reader.readValue(Formats.plainText);
-    //   // Do something with the plain text
-    // }
-
-
-
-
-
-  print("Background service ${DateTime.now()}");
 
 
 
@@ -203,8 +178,6 @@ class _ClipboardListenerAppState extends State<ClipboardListenerApp> with Clipbo
                 onPressed: () {
 
                   FlutterBackgroundService().startService();
-
-
                   // Implement the logic to join the session with the provided number.
                 },
               ),

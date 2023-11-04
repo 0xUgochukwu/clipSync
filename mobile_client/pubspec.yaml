@@ -34,6 +34,8 @@ dependencies:
   flutter_local_notifications: ^16.1.0
   clipboard_watcher: ^0.2.0
   socket_io_client: ^2.0.3+1
+  super_clipboard: ^0.7.2
+  clipboard_monitor:
 
 
   # The following adds the Cupertino Icons font to your application.
