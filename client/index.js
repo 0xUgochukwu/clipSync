@@ -1,70 +1,85 @@
 import { io } from "socket.io-client";
-import * as readline from "readline";
-import clipboard from "clipboardy";
+import argsParser from 'args-parser';
 
+import * as helpers from "./helpers.js";
 
-
-const socket = io('http://18.170.67.126:4500', {
+const args = argsParser(process.argv);
+console.log(args);
+const socket = io('clipsync.ugochukwu.tech:4500', {
     transports: ["websocket", "polling"],
     autoconnect: false,
 });
-let sessionID;
-
 socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
 });
-
-
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
+socket.on('end', () => {
+    socket.disconnect();
+    process.kill(process.pid, signal = 'SIGTERM');
 });
+let sessionID;
 
-function generateSessionID() {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-
-    for (let i = 0; i < 6; i++) {
-        const randomIndex = Math.floor(Math.random() * charset.length);
-        result += charset.charAt(randomIndex);
+if (args.start) {
+    start();
+} else if (args.join) {
+    if (args.session) {
+        join();
+    } else {
+        console.log(`Usage: clipsync join --session=[ Session ID ]`);
     }
-
-    return result;
+} else if (args.leave) {
+    leave();
+} else if (args.end) {
+    end();
+} else {
+    console.log(`Usage: clipsync [ command(start, join, leave, end) ] --session=[ Session ID ]`);
 }
 
 
-function listenToClipboard() {
-    let lastClip = clipboard.readSync();
-
-    function checkClipboard() {
-        const clip = clipboard.readSync();
-        if (clip !== lastClip) {
-            socket.emit('copy', clip);
-            lastClip = clip;
-        }
+const start = () => {
+    sessionID = helpers.generateSessionID();
+    socket.io.opts.query = {
+        sessionID,
     }
-
-    // Check the clipboard every half second
-    setInterval(checkClipboard, 500);
+    socket.connect();
+    socket.on('connect', () => {
+        socket.emit('join', sessionID);
+        console.log(`Your session has started with ID: ${sessionID}
+        \n Connect your other devices with this ID to sync your clipboards`);
+    });
+    helpers.listenToClipboard();
 }
-rl.question(`1. Start Session \n2. Join Session \n`, (reply) => {
-    switch (reply) {
-        case '1':
-            sessionID = generateSessionID();
-            console.log(`This is your session ID: ${sessionID}`);
-            socket.io.opts.query = {
-                sessionID,
-            }
-            socket.connect();
-            socket.emit('join', sessionID);
-            listenToClipboard();
-            break;
-        case '2':
-            rl.question(`Enter your session ID: `, (res) => {
-                socket.emit('join', res);
-                sessionID = res;
-                listenToClipboard();
-            });
-            break;
+
+const join = () => {
+    sessionID = args.session;
+    socket.io.opts.query = {
+        sessionID,
     }
-});
+    socket.on('connect', () => {
+        socket.emit('join', sessionID);
+        console.log(`You have joined the session with ID: ${sessionID}
+        \n Happy Clipping ;)`);
+    });
+    socket.connect();
+    helpers.listenToClipboard();
+}
+
+const leave = () => {
+    socket.emit('leave');
+    socket.on('disconnect', () => {
+        console.log(`You have left the session with ID: ${sessionID}
+        \n Byyyeeeee`);
+        process.kill(process.pid, signal = 'SIGTERM');
+    });
+    socket.disconnect();
+}
+
+const end = () => {
+    socket.emit('end');
+    socket.on('disconnect', () => {
+        console.log(`Sadly every good comes to an end 💀
+        \n Byyyeeeee`);
+        process.kill(process.pid, signal = 'SIGTERM');
+    });
+    socket.disconnect();
+
+}
