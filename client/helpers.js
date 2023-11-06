@@ -34,33 +34,37 @@ function listenToClipboard(socket) {
     setInterval(checkClipboard, 500);
 }
 
-function updateVars(data) {
-    const serializedData = JSON.stringify(data);
-    fs.writeFile(filePath, serializedData, (err) => {
-        if (err) {
-            console.error('Something went wrong... 1');
-        }
+async function updateVars(data) {
+    return new Promise((resolve, reject) => {
+        const serializedData = JSON.stringify(data);
+        fs.writeFile(filePath, serializedData, (err) => {
+            if (err) {
+                console.error('Something went wrong... 1');
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
     });
 }
 
 
-
-function retrieveVars() {
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            return {};
-        }
-
-        try {
-            return JSON.parse(data);
-        } catch (parseError) {
-            return {};
-        }
+async function retrieveVars() {
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                resolve({});
+            } else {
+                try {
+                    const parsedData = JSON.parse(data);
+                    resolve(parsedData);
+                } catch (parseError) {
+                    resolve({});
+                }
+            }
+        });
     });
-
-    return {};
 }
-
 
 
 

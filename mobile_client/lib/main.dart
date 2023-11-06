@@ -111,7 +111,7 @@ void onStart(ServiceInstance service) {
 
 
 
-  //display notification as service
+  // periodically check clipboard
   Timer.periodic(Duration(milliseconds: 500), (timer) async {
 
     print("Called");

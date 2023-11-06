@@ -1,5 +1,4 @@
-// process.cwd = process.cwd();
-// import daemon from "daemon";
+import daemon from "daemon";
 // daemon();
 
 import { io } from "socket.io-client";
@@ -9,9 +8,8 @@ import helpers from "./helpers.js";
 
 const args = argsParser(process.argv);
 console.log(args);
-const vars = helpers.retrieveVars();
+const vars = await helpers.retrieveVars();
 console.log(vars);
-vars.pid = process.pid;
 console.log(vars.pid);
 const socket = io('http://clipsync.ugochukwu.tech:4500', {
     transports: ["websocket", "polling"],
@@ -26,9 +24,13 @@ socket.on('end', () => {
 });
 
 
+process.on('SIGTERM', () => {
+    process.exit(0);
+});
 
-const start = () => {
-    vars.sessionID = helpers.generateSessionID();
+const start = async () => {
+    vars.pid = process.pid;
+    vars.sessionID = vars.sessionID || helpers.generateSessionID();
     console.log(vars.sessionID);
     socket.io.opts.query = {
         sessionID: vars.sessionID,
@@ -37,13 +39,15 @@ const start = () => {
         socket.emit('join', vars.sessionID);
         console.log(`Your session has started with ID: ${vars.sessionID}
         \nConnect your other devices with this ID to sync your clipboards`);
+        daemon();
     });
     socket.connect();
-    helpers.updateVars(vars);
+    await helpers.updateVars(vars);
     helpers.listenToClipboard(socket);
 }
 
-const join = () => {
+const join = async () => {
+    vars.pid = process.pid;
     vars.sessionID = args.session;
     socket.io.opts.query = {
         sessionID: vars.sessionID,
@@ -54,27 +58,30 @@ const join = () => {
         \nHappy Clipping ;)`);
     });
     socket.connect();
-    helpers.updateVars(vars);
+    await helpers.updateVars(vars);
     helpers.listenToClipboard(socket);
 }
 
-const leave = () => {
+const leave = async () => {
     socket.emit('leave');
     socket.on('disconnect', () => {
         console.log(`You have left the session with ID: ${sessionID}
         \nByyyeeeee`);
-        process.kill(vars.pid, signal = 'SIGTERM');
+        process.kill(vars.pid, 'SIGTERM');
     });
+    await helpers.updateVars({});
     socket.disconnect();
 }
 
-const end = () => {
+const end = async () => {
+    console.log("ending");
     socket.emit('end');
     socket.on('disconnect', () => {
         console.log(`Sadly every good comes to an end 💀
         \nByyyeeeee`);
-        process.kill(vars.pid, signal = 'SIGTERM');
+        process.kill(vars.pid, 'SIGTERM');
     });
+    await helpers.updateVars({});
     socket.disconnect();
 
 }
