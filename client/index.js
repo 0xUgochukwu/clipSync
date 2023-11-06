@@ -1,13 +1,18 @@
-require('daemon')();
-const { io } = require('socket.io-client');
-const args = require('args-parser')(process.argv);
+// process.cwd = process.cwd();
+// import daemon from "daemon";
+// daemon();
 
-const helpers = require("./helpers");
+import { io } from "socket.io-client";
+import argsParser from 'args-parser';
 
+import helpers from "./helpers.js";
+
+const args = argsParser(process.argv);
 console.log(args);
 const vars = helpers.retrieveVars();
 console.log(vars);
 vars.pid = process.pid;
+console.log(vars.pid);
 const socket = io('http://clipsync.ugochukwu.tech:4500', {
     transports: ["websocket", "polling"],
     autoConnect: false,

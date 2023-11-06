@@ -1,8 +1,9 @@
-const clipboard = require('clipboardy');
-const fs = require('fs');
-const path = require('path');
+import clipboard from "clipboardy";
+import fs from 'fs';
+import path from 'path';
 
-const filePath = path.resolve(__dirname, 'vars.json');
+
+const filePath = path.resolve('vars.json');
 console.log(filePath);
 
 function generateSessionID() {
@@ -60,7 +61,10 @@ function retrieveVars() {
     return {};
 }
 
-module.exports = {
+
+
+
+export default {
     generateSessionID,
     listenToClipboard,
     updateVars,
