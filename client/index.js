@@ -1,22 +1,79 @@
-import { io } from "socket.io-client";
-import argsParser from 'args-parser';
+require('daemon')();
+const { io } = require('socket.io-client');
+const args = require('args-parser')(process.argv);
 
-import * as helpers from "./helpers.js";
+const helpers = require("./helpers");
 
-const args = argsParser(process.argv);
 console.log(args);
-const socket = io('clipsync.ugochukwu.tech:4500', {
+const vars = helpers.retrieveVars();
+console.log(vars);
+vars.pid = process.pid;
+const socket = io('http://clipsync.ugochukwu.tech:4500', {
     transports: ["websocket", "polling"],
-    autoconnect: false,
+    autoConnect: false,
 });
 socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
 });
 socket.on('end', () => {
     socket.disconnect();
-    process.kill(process.pid, signal = 'SIGTERM');
+    process.kill(vars.pid, signal = 'SIGTERM');
 });
-let sessionID;
+
+
+
+const start = () => {
+    vars.sessionID = helpers.generateSessionID();
+    console.log(vars.sessionID);
+    socket.io.opts.query = {
+        sessionID: vars.sessionID,
+    }
+    socket.on('connect', () => {
+        socket.emit('join', vars.sessionID);
+        console.log(`Your session has started with ID: ${vars.sessionID}
+        \nConnect your other devices with this ID to sync your clipboards`);
+    });
+    socket.connect();
+    helpers.updateVars(vars);
+    helpers.listenToClipboard(socket);
+}
+
+const join = () => {
+    vars.sessionID = args.session;
+    socket.io.opts.query = {
+        sessionID: vars.sessionID,
+    }
+    socket.on('connect', () => {
+        socket.emit('join', vars.sessionID);
+        console.log(`You have joined the session with ID: ${sessionID}
+        \nHappy Clipping ;)`);
+    });
+    socket.connect();
+    helpers.updateVars(vars);
+    helpers.listenToClipboard(socket);
+}
+
+const leave = () => {
+    socket.emit('leave');
+    socket.on('disconnect', () => {
+        console.log(`You have left the session with ID: ${sessionID}
+        \nByyyeeeee`);
+        process.kill(vars.pid, signal = 'SIGTERM');
+    });
+    socket.disconnect();
+}
+
+const end = () => {
+    socket.emit('end');
+    socket.on('disconnect', () => {
+        console.log(`Sadly every good comes to an end 💀
+        \nByyyeeeee`);
+        process.kill(vars.pid, signal = 'SIGTERM');
+    });
+    socket.disconnect();
+
+}
+
 
 if (args.start) {
     start();
@@ -32,54 +89,4 @@ if (args.start) {
     end();
 } else {
     console.log(`Usage: clipsync [ command(start, join, leave, end) ] --session=[ Session ID ]`);
-}
-
-
-const start = () => {
-    sessionID = helpers.generateSessionID();
-    socket.io.opts.query = {
-        sessionID,
-    }
-    socket.connect();
-    socket.on('connect', () => {
-        socket.emit('join', sessionID);
-        console.log(`Your session has started with ID: ${sessionID}
-        \n Connect your other devices with this ID to sync your clipboards`);
-    });
-    helpers.listenToClipboard();
-}
-
-const join = () => {
-    sessionID = args.session;
-    socket.io.opts.query = {
-        sessionID,
-    }
-    socket.on('connect', () => {
-        socket.emit('join', sessionID);
-        console.log(`You have joined the session with ID: ${sessionID}
-        \n Happy Clipping ;)`);
-    });
-    socket.connect();
-    helpers.listenToClipboard();
-}
-
-const leave = () => {
-    socket.emit('leave');
-    socket.on('disconnect', () => {
-        console.log(`You have left the session with ID: ${sessionID}
-        \n Byyyeeeee`);
-        process.kill(process.pid, signal = 'SIGTERM');
-    });
-    socket.disconnect();
-}
-
-const end = () => {
-    socket.emit('end');
-    socket.on('disconnect', () => {
-        console.log(`Sadly every good comes to an end 💀
-        \n Byyyeeeee`);
-        process.kill(process.pid, signal = 'SIGTERM');
-    });
-    socket.disconnect();
-
 }
