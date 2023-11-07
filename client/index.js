@@ -23,10 +23,24 @@ socket.on('end', () => {
     process.kill(vars.pid, signal = 'SIGTERM');
 });
 
-
-process.on('SIGTERM', () => {
+console.log(process.pid)
+process.on('SIGHUP', () => {
+    console.log("Leaving")
     process.exit(0);
 });
+
+process.on('SIGTERM', async () => {
+    socket.emit('end');
+    socket.on('disconnect', () => {
+        console.log(`Sadly every good comes to an end 💀
+        \nByyyeeeee`);
+        console.log(vars.pid, "here")
+        process.kill(vars.pid, 'SIGTERM');
+    });
+    await helpers.updateVars({});
+    socket.disconnect();
+    process.exit(0);
+})
 
 const start = async () => {
     vars.pid = process.pid;
@@ -73,18 +87,6 @@ const leave = async () => {
     socket.disconnect();
 }
 
-const end = async () => {
-    console.log("ending");
-    socket.emit('end');
-    socket.on('disconnect', () => {
-        console.log(`Sadly every good comes to an end 💀
-        \nByyyeeeee`);
-        process.kill(vars.pid, 'SIGTERM');
-    });
-    await helpers.updateVars({});
-    socket.disconnect();
-
-}
 
 
 if (args.start) {
@@ -98,7 +100,7 @@ if (args.start) {
 } else if (args.leave) {
     leave();
 } else if (args.end) {
-    end();
+    process.kill(vars.pid, 'SIGTERM')
 } else {
     console.log(`Usage: clipsync [ command(start, join, leave, end) ] --session=[ Session ID ]`);
 }

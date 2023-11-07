@@ -1,7 +1,7 @@
 import child_process from 'child_process';
 
 // daemonize ourselves
-function daemonize_myself(opt) {
+module.exports = function(opt) {
     // we are a daemon, don't daemonize again
     if (process.env.__daemon) {
         return process.pid;
@@ -22,7 +22,7 @@ function daemonize_myself(opt) {
     env.__daemon = true;
 
     // start ourselves as a daemon
-    daemon(script, args, opt);
+    module.exports.daemon(script, args, opt);
 
     // parent is done
     return process.exit();
