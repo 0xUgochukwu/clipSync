@@ -13,7 +13,7 @@ const args = argsParser(process.argv);
 
 
 const socket = io('http://clipsync.ugochukwu.tech:4500', {
-    transports: ["websocket", "polling"],
+    transports: ['websocket', 'polling'],
     autoConnect: false,
 });
 socket.on('sync', (clip) => {
@@ -21,11 +21,17 @@ socket.on('sync', (clip) => {
 });
 socket.on('close', () => {
     socket.disconnect();
-    process.kill(config.pid, signal = 'SIGTERM');
+    process.kill(config.get('pid'), signal = 'SIGTERM');
 });
 
-socket.on('connect_error', err => helpers.handleErrors(err))
-socket.on('connect_failed', err => helpers.handleErrors(err))
+socket.on('connect_error', err => {
+    config.clear();
+    helpers.handleErrors(err)
+});
+socket.on('connect_failed', err => {
+    config.clear();
+    helpers.handleErrors(err)
+});
 
 
 
@@ -55,7 +61,7 @@ process.on('SIGTERM', async () => {
         config.clear();
         socket.disconnect();
     } else {
-        console.log("You are not connected to any session");
+        console.log('You are not connected to any session');
     }
 })
 
@@ -100,24 +106,24 @@ if (args.start) {
     if (args.session && args.session.length === 6) {
         join();
     } else {
-        console.log(`Usage: clipsync join --session=[ Session ID ]`);
+        console.log('Usage: clipsync join --session=[ Session ID ]');
     }
 } else if (args.session) {
-    const session = config.get(`sessionID`);
+    const session = config.get('sessionID');
     if (session) {
         console.log(`You're in session ${session}`);
     } else {
         console.log(`You don't have any ongoing session`);
     }
 } else if (args.leave) {
-    const session = config.get(`sessionID`);
+    const session = config.get('sessionID');
     if (session) {
         process.kill(config.get('pid'), 'SIGHUP');
     } else {
         console.log(`You don't have any ongoing session`);
     }
 } else if (args.end) {
-    const session = config.get(`sessionID`);
+    const session = config.get('sessionID');
     if (session) {
         process.kill(config.get('pid'), 'SIGTERM')
     } else {
