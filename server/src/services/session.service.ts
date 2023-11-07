@@ -26,11 +26,8 @@ export const Socket = (io: any) => {
 
         // End Session
         socket.on('end', () => {
-            socket.clients(socket.sessionID).forEach((client: any) => {
-                client.leave(socket.sessionID);
-                console.log(`[ Closing ] ${socket.id}, Left Session: ${socket.sessionID}`)
-            });
-
+            socket.emit('close');
+            io.socketsLeave(socket.sessionID);
             console.log(`Everything dies, session ${socket.sessionID} just did`);
         });
 
