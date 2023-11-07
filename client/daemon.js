@@ -1,7 +1,7 @@
 import child_process from 'child_process';
 
 // daemonize ourselves
-module.exports = function(opt) {
+export default function daemonize(opt) {
     // we are a daemon, don't daemonize again
     if (process.env.__daemon) {
         return process.pid;
@@ -29,7 +29,7 @@ module.exports = function(opt) {
 };
 
 // daemonizes the script and returns the child process object
-const daemon = function(script, args, opt) {
+function ff(script, args, opt) {
 
     opt = opt || {};
 
@@ -55,4 +55,3 @@ const daemon = function(script, args, opt) {
     return child;
 };
 
-export default daemon;
