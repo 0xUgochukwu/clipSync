@@ -39,6 +39,9 @@ Contributions to clipSync are welcome! Feel free to open issues, submit pull req
 
 
 # Contact
-If you have any questions or need assistance, you can contact me at 0xUgochukwu@gmail.com['mailto:0xUgochukwu@gmail.com']
+If you have any questions or need assistance, you can contact me at 0xUgochukwu@gmail.com
 
 
+
+
+❤️
