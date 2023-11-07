@@ -10,9 +10,6 @@ const config = new Configstore('clipSync', {}, { globalConfigPath: true });
 const args = argsParser(process.argv);
 
 
-console.log(args);
-console.log(config);
-console.log(config.get('pid'));
 const socket = io('http://clipsync.ugochukwu.tech:4500', {
     transports: ["websocket", "polling"],
     autoConnect: false,
@@ -30,10 +27,8 @@ socket.on('connect_failed', err => helpers.handleErrors(err))
 
 
 
-console.log(process.pid)
 process.on('SIGHUP', async () => {
     if (socket.connected) {
-        console.log("Leaving")
         socket.emit('leave');
         socket.on('disconnect', () => {
             console.log(`You have left the session with ID: ${config.sessionID}
@@ -115,9 +110,19 @@ if (args.start) {
         console.log(`You don't have any ongoing session`);
     }
 } else if (args.leave) {
-    process.kill(config.get('pid'), 'SIGHUP');
+    const session = config.get(`sessionID`);
+    if (session) {
+        process.kill(config.get('pid'), 'SIGHUP');
+    } else {
+        console.log(`You don't have any ongoing session`);
+    }
 } else if (args.end) {
-    process.kill(config.get('pid'), 'SIGTERM')
+    const session = config.get(`sessionID`);
+    if (session) {
+        process.kill(config.get('pid'), 'SIGTERM')
+    } else {
+        console.log(`You don't have any ongoing session`);
+    }
 } else {
     console.log(`Usage: clipsync [ command(start, join, leave, end) ] --session=[ Session ID ]`);
 }
