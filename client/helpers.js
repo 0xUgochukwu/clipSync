@@ -32,6 +32,7 @@ function listenToClipboard(socket) {
 function handleErrors(error) {
     console.log(`ClipSync experienced an issue while syncing your clipboards
         \nPlease try again :\ `);
+    process.exit(127);
 }
 
 

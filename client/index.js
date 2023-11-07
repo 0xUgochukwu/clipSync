@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { io } from 'socket.io-client';
 import argsParser from 'args-parser';
 import Configstore from 'configstore';
@@ -48,7 +50,6 @@ process.on('SIGTERM', async () => {
         socket.on('disconnect', () => {
             console.log(`Sadly every good thing comes to an end 💀
         \nByyyeeeee`);
-            console.log(config.get('pid'), "here")
             process.exit(0);
         });
         config.clear();
@@ -64,7 +65,6 @@ const start = async () => {
         'sessionID',
         helpers.generateSessionID()
     );
-    console.log(config.get('sessionID'));
     socket.io.opts.query = {
         sessionID: config.get('sessionID'),
     }
