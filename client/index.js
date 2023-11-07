@@ -1,15 +1,15 @@
-import daemon from 'daemon';
-// daemon();
-
 import { io } from 'socket.io-client';
 import argsParser from 'args-parser';
 import Configstore from 'configstore';
 
+import helpers from './helpers.js';
+import daemonize from './daemonizer.js';
+
+
 const config = new Configstore('clipSync', {}, { globalConfigPath: true });
-
-import helpers from "./helpers.js";
-
 const args = argsParser(process.argv);
+
+
 console.log(args);
 console.log(config);
 console.log(config.get('pid'));
@@ -24,6 +24,9 @@ socket.on('close', () => {
     socket.disconnect();
     process.kill(config.pid, signal = 'SIGTERM');
 });
+
+socket.on('connect_error', err => helpers.handleErrors(err))
+socket.on('connect_failed', err => helpers.handleErrors(err))
 
 
 
@@ -72,9 +75,9 @@ const start = async () => {
     }
     socket.on('connect', () => {
         socket.emit('join', config.get('sessionID'));
-        console.log(`Your session has started with ID: ${config.sessionID}
+        console.log(`Your session has started with ID: ${config.get('sessionID')}
         \nConnect your other devices with this ID to sync your clipboards`);
-        daemon();
+        daemonize();
     });
     socket.connect();
     helpers.listenToClipboard(socket);
@@ -88,9 +91,9 @@ const join = async () => {
     }
     socket.on('connect', () => {
         socket.emit('join');
-        console.log(`You have joined the session with ID: ${config.sessionID}
+        console.log(`You have joined the session with ID: ${config.get('sessionID')}
         \nHappy Clipping ;)`);
-        daemon();
+        daemonize();
     });
     socket.connect();
     helpers.listenToClipboard(socket);
@@ -103,6 +106,13 @@ if (args.start) {
         join();
     } else {
         console.log(`Usage: clipsync join --session=[ Session ID ]`);
+    }
+} else if (args.session) {
+    const session = config.get(`sessionID`);
+    if (session) {
+        console.log(`You're in session ${session}`);
+    } else {
+        console.log(`You don't have any ongoing session`);
     }
 } else if (args.leave) {
     process.kill(config.get('pid'), 'SIGHUP');

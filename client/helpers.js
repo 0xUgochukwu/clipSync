@@ -29,9 +29,15 @@ function listenToClipboard(socket) {
     setInterval(checkClipboard, 500);
 }
 
+function handleErrors(error) {
+    console.log(`ClipSync experienced an issue while syncing your clipboards
+        \nPlease try again :\ `);
+}
+
 
 
 export default {
     generateSessionID,
     listenToClipboard,
+    handleErrors
 }
