@@ -18,28 +18,45 @@ const socket = io('http://clipsync.ugochukwu.tech:4500', {
 socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
 });
-socket.on('end', () => {
+socket.on('close', () => {
     socket.disconnect();
     process.kill(vars.pid, signal = 'SIGTERM');
 });
 
+
+
 console.log(process.pid)
-process.on('SIGHUP', () => {
-    console.log("Leaving")
-    process.exit(0);
+process.on('SIGHUP', async () => {
+    if (socket.connected) {
+        console.log("Leaving")
+        socket.emit('leave');
+        socket.on('disconnect', () => {
+            console.log(`You have left the session with ID: ${sessionID}
+        \nByyyeeeee`);
+        });
+        await helpers.updateVars({});
+        socket.disconnect();
+        process.exit(0);
+    } else {
+        console.log("You are not connected to any session");
+    }
 });
 
 process.on('SIGTERM', async () => {
-    socket.emit('end');
-    socket.on('disconnect', () => {
-        console.log(`Sadly every good comes to an end 💀
+    if (socket.connected) {
+        socket.emit('end');
+        socket.on('disconnect', () => {
+            console.log(`Sadly every good comes to an end 💀
         \nByyyeeeee`);
-        console.log(vars.pid, "here")
-        process.kill(vars.pid, 'SIGTERM');
-    });
-    await helpers.updateVars({});
-    socket.disconnect();
-    process.exit(0);
+            console.log(vars.pid, "here")
+            process.kill(vars.pid, 'SIGTERM');
+        });
+        await helpers.updateVars({});
+        socket.disconnect();
+        process.exit(0);
+    } else {
+        console.log("You are not connected to any session");
+    }
 })
 
 const start = async () => {
@@ -68,26 +85,14 @@ const join = async () => {
     }
     socket.on('connect', () => {
         socket.emit('join', vars.sessionID);
-        console.log(`You have joined the session with ID: ${sessionID}
+        console.log(`You have joined the session with ID: ${vars.sessionID}
         \nHappy Clipping ;)`);
+        daemon();
     });
     socket.connect();
     await helpers.updateVars(vars);
     helpers.listenToClipboard(socket);
 }
-
-const leave = async () => {
-    socket.emit('leave');
-    socket.on('disconnect', () => {
-        console.log(`You have left the session with ID: ${sessionID}
-        \nByyyeeeee`);
-        process.kill(vars.pid, 'SIGTERM');
-    });
-    await helpers.updateVars({});
-    socket.disconnect();
-}
-
-
 
 if (args.start) {
     start();
@@ -98,7 +103,7 @@ if (args.start) {
         console.log(`Usage: clipsync join --session=[ Session ID ]`);
     }
 } else if (args.leave) {
-    leave();
+    process.kill(vars.pid, 'SIGHUP');
 } else if (args.end) {
     process.kill(vars.pid, 'SIGTERM')
 } else {
