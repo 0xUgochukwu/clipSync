@@ -21,7 +21,8 @@ socket.on('sync', (clip) => {
 });
 socket.on('close', () => {
     socket.disconnect();
-    process.kill(config.get('pid'), signal = 'SIGTERM');
+    process.exit(0);
+    // process.kill(config.get('pid'), signal = 'SIGTERM');
 });
 
 socket.on('connect_error', err => {
