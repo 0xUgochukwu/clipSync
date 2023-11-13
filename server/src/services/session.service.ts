@@ -43,7 +43,7 @@ export const Socket = (io: any) => {
 
         // End Session
         socket.on('end', () => {
-            socket.emit('close');
+            socket.to(socket.sessionID).emit('close');
             io.socketsLeave(socket.sessionID);
             console.log(`Everything dies, session ${socket.sessionID} just did`);
         });
