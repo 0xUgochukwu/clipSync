@@ -113,8 +113,12 @@ if (args.start) {
         } else start();
     };
 } else if (args.join) {
-    if (args.session && args.session.length === 6) {
-        join();
+    if (args.session) {
+        if (/^[A-Z0-9]{6}$/.test(args.session)) {
+            join();
+        } else {
+            console.log('[ClipSync]: Invalid Session ID');
+        }
     } else {
         console.log('Usage: clipsync join --session=[ Session ID ]');
     }
