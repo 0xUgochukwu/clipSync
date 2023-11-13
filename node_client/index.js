@@ -21,6 +21,7 @@ socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
 });
 socket.on('close', () => {
+    config.clear();
     socket.disconnect();
     process.exit(0);
     // process.kill(config.get('pid'), signal = 'SIGTERM');
