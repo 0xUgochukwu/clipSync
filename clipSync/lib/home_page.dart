@@ -1,0 +1,227 @@
+import 'package:flutter/material.dart';
+
+
+import 'package:google_fonts/google_fonts.dart';
+import 'package:clipboard_watcher/clipboard_watcher.dart';
+import 'package:socket_io_client/socket_io_client.dart';
+
+
+import 'package:clipsync/session_page.dart';
+import 'package:clipsync/notification/top_snack_bar.dart';
+import 'package:clipsync/notification/custom_snack_bar.dart';
+
+
+
+
+
+class HomePage extends StatelessWidget {
+  final ClipboardWatcher clipboardWatcher;
+  final Socket socket;
+  final TextEditingController sessionIDController = TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  HomePage({
+    Key? key,
+    required this.clipboardWatcher,
+    required this.socket,
+  }) : super(key: key) {
+    socket.on('connect_error', (error) {
+      showTopSnackBar(
+        Overlay.of(_scaffoldKey.currentContext!),
+        const CustomSnackBar.error(
+          message:
+          "Error Connecting to ClipSync, Retrying...",
+        ),
+      );
+    });
+
+    socket.on('connect_failed', (error) {
+      showTopSnackBar(
+        Overlay.of(_scaffoldKey.currentContext!),
+        const CustomSnackBar.error(
+          message:
+          "Error Connecting to ClipSync, Retrying...",
+        ),
+      );
+    });
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: _scaffoldKey,
+      body: Center(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Image(
+                image: AssetImage('assets/images/white_logo.png'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(300, 60),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 5,
+                  shadowColor: const Color(0xFFEEEDED),
+
+                ),
+                child: Text(
+                    'Start Session',
+                    style: GoogleFonts.spaceMono(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                )
+                ),
+                onPressed: () {
+                  socket.io.options?['query'] = {'starting': true};
+                  socket.on('started', (sessionID) {
+                    _handleClose(context);
+                    clipboardWatcher.start();
+                    showTopSnackBar(
+                      Overlay.of(_scaffoldKey.currentContext!),
+                      CustomSnackBar.success(
+                        message: "Session $sessionID Started",
+                      ),
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SessionPage(
+                          sessionID: sessionID,
+                          clipboardWatcher: clipboardWatcher,
+                          socket: socket,
+                        ),
+                      ),
+                    );
+                  });
+                  socket.on('connect', (_) {
+                    socket.emit('start');
+                  });
+                  socket.connect();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(300, 60),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 5,
+                  shadowColor: const Color(0xFFEEEDED),
+
+                ),
+                child: Text(
+                    'Join Session',
+                    style: GoogleFonts.spaceMono(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                    )
+                ),
+                onPressed: () {
+                  showDialog(
+                    context: _scaffoldKey.currentContext!,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: const Text('Enter Session ID'),
+                      content: TextField(
+                        controller: sessionIDController,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter Session ID',
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            primary: Colors.amber,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context, 'Cancel');
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            primary: Colors.black,
+                          ),
+                          onPressed: () {
+                            socket.io.options?['query'] = {
+                              'sessionID': sessionIDController.text
+                            };
+                            socket.on('joined', (sessionID) {
+                              clipboardWatcher.start();
+                              _handleClose(context);
+                              Navigator.of(context).pop();
+                              showTopSnackBar(
+                                Overlay.of(_scaffoldKey.currentContext!),
+                                CustomSnackBar.success(
+                                  message: "Synced! Happy Clipping!",
+                                ),
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SessionPage(
+                                    sessionID: sessionID,
+                                    clipboardWatcher: clipboardWatcher,
+                                    socket: socket,
+                                  ),
+                                ),
+                              );
+                            });
+                            socket.on('connect', (_) {
+                              socket.emit('join');
+                            });
+                            socket.connect();
+                          },
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+
+                  );
+                },
+              ),
+            ),
+
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  void _handleClose(BuildContext context) {
+    socket.on('close', (_) {
+      print("Closing session...");
+      socket.on('disconnect', (_) {
+        showTopSnackBar(
+          Overlay.of(_scaffoldKey.currentContext!),
+          CustomSnackBar.info(
+            message: "Your Session Ended!",
+          ),
+        );
+        Navigator.push(
+          _scaffoldKey.currentContext!,
+          MaterialPageRoute(
+            builder: (context) => HomePage(
+              key: key,
+              clipboardWatcher: clipboardWatcher,
+              socket: socket,
+            ),
+          ),
+        );
+      });
+      socket.disconnect();
+    });
+  }
+}
