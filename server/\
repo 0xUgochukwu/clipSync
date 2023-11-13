@@ -5,6 +5,7 @@ export const Socket = (io: any) => {
 
     // Authenticate Client
     io.use((socket: any, next: any) => {
+        console.log(socket.handshake.query)
         if (socket.handshake.query.starting) {
             socket.sessionID = generateSessionID();
             return next();
@@ -21,23 +22,24 @@ export const Socket = (io: any) => {
 
         // Start Session
         socket.on('start', () => {
-            console.log(`${socket.id} Started Session: ${socket.sessionID}`);
+            console.log(`${socket.id} Started Session: ${socket.sessionID}`)
             socket.join(socket.sessionID);
-            socket.emit('started', socket.sessionID);
+            socket.emit('starting', socket.sessionID);
             console.log(socket.sessionID, socket.id)
         });
 
 
         // Join Session
         socket.on('join', () => {
+            console.log('gudsjb')
             socket.join(socket.sessionID);
-            console.log(`${socket.id}, Joined Session: ${socket.sessionID}`);
+            console.log(`${socket.id}, Joined Session: ${socket.sessionID}`)
         });
 
         // Leave Session
         socket.on('leave', () => {
             socket.leave(socket.sessionID);
-            console.log(`${socket.id}, Left Session: ${socket.sessionID}`);
+            console.log(`${socket.id}, Left Session: ${socket.sessionID}`)
         });
 
         // End Session
