@@ -78,6 +78,5 @@ class _ClipSyncState extends State<ClipSync> with ClipboardListener {
     await Clipboard.getData(Clipboard.kTextPlain);
     print(clip?.text);
     socket.emit('copy', clip?.text);
-    // Display Notificationk
   }
 }

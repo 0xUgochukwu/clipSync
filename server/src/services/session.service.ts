@@ -52,7 +52,7 @@ export const Socket = (io: any) => {
 
         // Handle copy event on client
         socket.on('copy', (clip: any) => {
-            console.log(socket.sessionID);
+            socket.emit('copied');
             console.log(`${socket.id} in ${socket.sessionID} Copied something: ${clip}`);
 
             socket.to(socket.sessionID).emit('sync', clip);

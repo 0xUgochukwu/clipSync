@@ -65,10 +65,10 @@ class HomePage extends StatelessWidget {
                   _handleErrors(context);
                   socket.io.options?['query'] = {'starting': true};
                   socket.on('started', (sessionID) {
-                    _handleClose(context);
+                    _handleEvents(context);
                     clipboardWatcher.start();
                     showTopSnackBar(
-                      Overlay.of(_scaffoldKey.currentContext!),
+                      Overlay.of(context),
                       CustomSnackBar.success(
                         message: "Session $sessionID Started",
                       ),
@@ -152,7 +152,7 @@ class HomePage extends StatelessWidget {
                             };
                             socket.on('joined', (sessionID) {
                               clipboardWatcher.start();
-                              _handleClose(context);
+                              _handleEvents(context);
                               Navigator.of(context).pop();
                               showTopSnackBar(
                                 Overlay.of(_scaffoldKey.currentContext!),
@@ -193,9 +193,16 @@ class HomePage extends StatelessWidget {
   }
 
 
-  void _handleClose(BuildContext context) {
+  void _handleEvents(BuildContext context) {
+    socket.on('copied', (_) {
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.success(
+          message: "Clipped!",
+        ),
+      );
+    });
     socket.on('close', (_) {
-      print("Closing session...");
       socket.on('disconnect', (_) {
         showTopSnackBar(
           Overlay.of(_scaffoldKey.currentContext!),
