@@ -5,12 +5,13 @@ export const Socket = (io: any) => {
 
     // Authenticate Client
     io.use((socket: any, next: any) => {
-        if (socket.handshake.query.starting) {
+        const query = socket.handshake.query;
+        if (query.starting) {
             socket.sessionID = generateSessionID();
             return next();
         }
-        if (socket.handshake.query.sessionID) {
-            socket.sessionID = socket.handshake.query.sessionID;
+        if (query.sessionID && /^[A-Z0-9]{6}$/.test(query.sessionID)) {
+            socket.sessionID = query.sessionID;
             return next();
         } else {
             next(new Error("Error Joining Session!"));
