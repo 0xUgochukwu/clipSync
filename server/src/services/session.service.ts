@@ -31,6 +31,7 @@ export const Socket = (io: any) => {
         // Join Session
         socket.on('join', () => {
             socket.join(socket.sessionID);
+            socket.emit('joined', socket.sessionID);
             console.log(`${socket.id}, Joined Session: ${socket.sessionID}`);
         });
 
