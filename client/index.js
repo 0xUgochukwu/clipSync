@@ -16,15 +16,6 @@ const socket = io('ws://localhost:4500', {
     transports: ['websocket', 'polling'],
     autoConnect: false,
 });
-socket.on('started', (sessionID) => {
-    config.sessionID = config.set(
-        'sessionID',
-        sessionID
-    );
-    console.log(`Your session has started with ID: ${config.get('sessionID')}
-        \nConnect your other devices with this ID to sync your clipboards`);
-    daemonize();
-});
 socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
 });
@@ -80,6 +71,12 @@ const start = async () => {
     socket.io.opts.query = {
         starting: true,
     }
+    socket.on('started', (sessionID) => {
+        config.sessionID = config.set('sessionID', sessionID);
+        console.log(`Your session has started with ID: ${config.get('sessionID')}
+        \nConnect your other devices with this ID to sync your clipboards`);
+        daemonize();
+    });
     socket.on('connect', () => {
         socket.emit('start');
     });
@@ -103,10 +100,15 @@ const join = async () => {
 }
 
 if (args.start) {
-    console.log('update')
     if (process.env.__daemon) {
+        args.session = config.get('sessionID');
         join();
-    } else start();
+    } else {
+        const currentSession = config.get('sessionID');
+        if (currentSession) {
+            console.log(`You're already in session ${currentSession}`);
+        } else start();
+    };
 } else if (args.join) {
     if (args.session && args.session.length === 6) {
         join();
@@ -124,13 +126,15 @@ if (args.start) {
     const session = config.get('sessionID');
     if (session) {
         process.kill(config.get('pid'), 'SIGHUP');
+        console.log('Byeeeeee!');
     } else {
         console.log(`You don't have any ongoing session`);
     }
 } else if (args.end) {
     const session = config.get('sessionID');
     if (session) {
-        process.kill(config.get('pid'), 'SIGTERM')
+        process.kill(config.get('pid'), 'SIGTERM');
+        console.log('Byeeeeee!');
     } else {
         console.log(`You don't have any ongoing session`);
     }
