@@ -2,6 +2,7 @@
 
 import { io } from 'socket.io-client';
 import argsParser from 'args-parser';
+import clipboard from "clipboardy";
 import Configstore from 'configstore';
 
 import helpers from './helpers.js';
@@ -12,7 +13,7 @@ const config = new Configstore('clipSync', {}, { globalConfigPath: true });
 const args = argsParser(process.argv);
 
 
-const socket = io('ws://localhost:4500', {
+const socket = io('ws://18.170.67.126:4500', {
     transports: ['websocket', 'polling'],
     autoConnect: false,
 });
@@ -85,15 +86,17 @@ const start = async () => {
 
 const join = async () => {
     config.set('pid', process.pid);
-    config.set('sessionID', args.session);
     socket.io.opts.query = {
-        sessionID: config.get('sessionID'),
-    }
-    socket.on('connect', () => {
-        socket.emit('join');
+        sessionID: args.session,
+    };
+    socket.on('joined', (sessionID) => {
+        config.set('sessionID', sessionID);
         console.log(`You have joined the session with ID: ${config.get('sessionID')}
         \nHappy Clipping ;)`);
         daemonize();
+    });
+    socket.on('connect', () => {
+        socket.emit('join');
     });
     socket.connect();
     helpers.listenToClipboard(socket);
