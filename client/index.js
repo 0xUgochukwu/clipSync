@@ -12,9 +12,18 @@ const config = new Configstore('clipSync', {}, { globalConfigPath: true });
 const args = argsParser(process.argv);
 
 
-const socket = io('http://clipsync.ugochukwu.tech:4500', {
+const socket = io('ws://localhost:4500', {
     transports: ['websocket', 'polling'],
     autoConnect: false,
+});
+socket.on('started', (sessionID) => {
+    config.sessionID = config.set(
+        'sessionID',
+        sessionID
+    );
+    console.log(`Your session has started with ID: ${config.get('sessionID')}
+        \nConnect your other devices with this ID to sync your clipboards`);
+    daemonize();
 });
 socket.on('sync', (clip) => {
     clipboard.writeSync(clip);
@@ -68,21 +77,13 @@ process.on('SIGTERM', async () => {
 
 const start = async () => {
     config.set('pid', process.pid);
-    config.sessionID = config.get('sessionID') || config.set(
-        'sessionID',
-        helpers.generateSessionID()
-    );
     socket.io.opts.query = {
-        sessionID: config.get('sessionID'),
+        starting: true,
     }
     socket.on('connect', () => {
-        socket.emit('join', config.get('sessionID'));
-        console.log(`Your session has started with ID: ${config.get('sessionID')}
-        \nConnect your other devices with this ID to sync your clipboards`);
-        daemonize();
+        socket.emit('start');
     });
     socket.connect();
-    helpers.listenToClipboard(socket);
 }
 
 const join = async () => {
@@ -102,7 +103,10 @@ const join = async () => {
 }
 
 if (args.start) {
-    start();
+    console.log('update')
+    if (process.env.__daemon) {
+        join();
+    } else start();
 } else if (args.join) {
     if (args.session && args.session.length === 6) {
         join();
