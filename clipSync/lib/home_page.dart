@@ -7,8 +7,8 @@ import 'package:socket_io_client/socket_io_client.dart';
 
 
 import 'package:clipsync/session_page.dart';
-import 'package:clipsync/notification/top_snack_bar.dart';
-import 'package:clipsync/notification/custom_snack_bar.dart';
+import 'package:clipsync/components/notification/top_snack_bar.dart';
+import 'package:clipsync/components/notification/custom_snack_bar.dart';
 
 
 
@@ -19,32 +19,13 @@ class HomePage extends StatelessWidget {
   final Socket socket;
   final TextEditingController sessionIDController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final sessionIDRegex = RegExp(r'^[A-Z0-9]{6}$');
 
   HomePage({
     Key? key,
     required this.clipboardWatcher,
     required this.socket,
-  }) : super(key: key) {
-    socket.on('connect_error', (error) {
-      showTopSnackBar(
-        Overlay.of(_scaffoldKey.currentContext!),
-        const CustomSnackBar.error(
-          message:
-          "Error Connecting to ClipSync, Retrying...",
-        ),
-      );
-    });
-
-    socket.on('connect_failed', (error) {
-      showTopSnackBar(
-        Overlay.of(_scaffoldKey.currentContext!),
-        const CustomSnackBar.error(
-          message:
-          "Error Connecting to ClipSync, Retrying...",
-        ),
-      );
-    });
-  }
+  }) : super(key: key);
 
 
 
@@ -81,6 +62,7 @@ class HomePage extends StatelessWidget {
                 )
                 ),
                 onPressed: () {
+                  _handleErrors(context);
                   socket.io.options?['query'] = {'starting': true};
                   socket.on('started', (sessionID) {
                     _handleClose(context);
@@ -154,6 +136,17 @@ class HomePage extends StatelessWidget {
                             primary: Colors.black,
                           ),
                           onPressed: () {
+                            _handleErrors(context);
+                            print(sessionIDController.text);
+                            if (!sessionIDRegex.hasMatch(sessionIDController.text)) {
+                              showTopSnackBar(
+                                Overlay.of(_scaffoldKey.currentContext!),
+                                const CustomSnackBar.error(
+                                  message: "Invalid Session ID",
+                                ),
+                              );
+                              return;
+                            }
                             socket.io.options?['query'] = {
                               'sessionID': sessionIDController.text
                             };
@@ -222,6 +215,28 @@ class HomePage extends StatelessWidget {
         );
       });
       socket.disconnect();
+    });
+  }
+
+  void _handleErrors(BuildContext context) {
+    socket.on('connect_error', (error) {
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(
+          message:
+          "Error Connecting to ClipSync, Retrying...",
+        ),
+      );
+    });
+
+    socket.on('connect_failed', (error) {
+      showTopSnackBar(
+        Overlay.of(context),
+        const CustomSnackBar.error(
+          message:
+          "Error Connecting to ClipSync, Retrying...",
+        ),
+      );
     });
   }
 }

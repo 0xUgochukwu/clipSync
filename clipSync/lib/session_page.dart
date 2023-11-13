@@ -6,47 +6,14 @@ import 'package:socket_io_client/socket_io_client.dart';
 
 
 import 'package:clipsync/home_page.dart';
-import 'package:clipsync/notification/top_snack_bar.dart';
-import 'package:clipsync/notification/custom_snack_bar.dart';
-
-
-
-class SessionIDBox extends StatelessWidget {
-  final String sessionID;
-
-  SessionIDBox({required this.sessionID});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(8.0),
-
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(
-          color: Colors.green,
-          width: 2,
-        ),
-      ),
-      child: Text(
-        sessionID,
-        style: GoogleFonts.spaceMono(
-          fontSize: 50,
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 5,
-
-        )
-      ),
-    );
-  }
-}
+import 'package:clipsync/components/notification/top_snack_bar.dart';
+import 'package:clipsync/components/notification/custom_snack_bar.dart';
+import 'package:clipsync/components/session_id_box.dart';
 
 class SessionPage extends StatelessWidget {
   final String sessionID;
   final ClipboardWatcher clipboardWatcher;
   final Socket socket;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   SessionPage({
     Key? key,
@@ -100,7 +67,7 @@ class SessionPage extends StatelessWidget {
                   clipboardWatcher.stop();
                   socket.on('disconnect', (_) {
                     showTopSnackBar(
-                      Overlay.of(_scaffoldKey.currentContext!),
+                      Overlay.of(context),
                       CustomSnackBar.info(
                         message: "Byeeeeee!",
                       ),
@@ -146,7 +113,7 @@ class SessionPage extends StatelessWidget {
                   clipboardWatcher.stop();
                   socket.on('disconnect', (_) {
                     showTopSnackBar(
-                      Overlay.of(_scaffoldKey.currentContext!),
+                      Overlay.of(context),
                       CustomSnackBar.info(
                         message: "Welp, that's the end of that!",
                       ),

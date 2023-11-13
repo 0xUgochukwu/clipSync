@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:clipsync/notification/tap_bounce_container.dart';
-import 'package:clipsync/notification/safe_area_values.dart';
+import 'package:clipsync/components/notification/tap_bounce_container.dart';
+import 'package:clipsync/components/notification/safe_area_values.dart';
 typedef ControllerCallback = void Function(AnimationController);
 
 /// Represents possible triggers to dismiss the snackbar.
