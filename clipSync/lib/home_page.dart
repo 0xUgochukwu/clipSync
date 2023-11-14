@@ -65,7 +65,7 @@ class HomePage extends StatelessWidget {
                   _handleErrors(context);
                   socket.io.options?['query'] = {'starting': true};
                   socket.on('started', (sessionID) {
-                    _handleEvents(context);
+                    _handleClose(context);
                     clipboardWatcher.start();
                     showTopSnackBar(
                       Overlay.of(context),
@@ -152,7 +152,7 @@ class HomePage extends StatelessWidget {
                             };
                             socket.on('joined', (sessionID) {
                               clipboardWatcher.start();
-                              _handleEvents(context);
+                              _handleClose(context);
                               Navigator.of(context).pop();
                               showTopSnackBar(
                                 Overlay.of(_scaffoldKey.currentContext!),
@@ -193,15 +193,7 @@ class HomePage extends StatelessWidget {
   }
 
 
-  void _handleEvents(BuildContext context) {
-    socket.on('copied', (_) {
-      showTopSnackBar(
-        Overlay.of(context),
-        CustomSnackBar.success(
-          message: "Clipped!",
-        ),
-      );
-    });
+  void _handleClose(BuildContext context) {
     socket.on('close', (_) {
       socket.on('disconnect', (_) {
         showTopSnackBar(

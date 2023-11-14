@@ -15,8 +15,8 @@ import 'package:clipsync/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print(await FlutterBackground.initialize());
-  print(await FlutterBackground.enableBackgroundExecution());
+  await FlutterBackground.initialize();
+  await FlutterBackground.enableBackgroundExecution();
   runApp(const ClipSync());
 }
 

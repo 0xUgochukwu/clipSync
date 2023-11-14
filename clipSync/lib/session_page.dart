@@ -24,6 +24,14 @@ class SessionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    socket.on('copied', (_) {
+      showTopSnackBar(
+        Overlay.of(context),
+        CustomSnackBar.info(
+          message: "Clip Synced 🔗",
+        ),
+      );
+    });
     return Scaffold(
       body: Center(
         child: Column(
