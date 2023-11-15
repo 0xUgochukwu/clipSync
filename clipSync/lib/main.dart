@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -15,11 +16,20 @@ import 'package:clipsync/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FlutterBackground.initialize();
-  await FlutterBackground.enableBackgroundExecution();
-  runApp(const ClipSync());
-}
 
+  if (Platform.isAndroid) {
+    FlutterBackground.initialize().then((_) async {
+      await FlutterBackground.enableBackgroundExecution();
+    });
+  }
+
+  Socket socket = io('ws://18.170.67.126:4500', <String, dynamic>{
+    'autoConnect': false,
+    'transports': ['websocket'],
+  });
+
+  runApp(ClipSync(socket: socket));
+}
 Map<int, Color> color =
 {
   50:Color.fromRGBO(255,255,255, .1),
@@ -33,23 +43,25 @@ Map<int, Color> color =
   800:Color.fromRGBO(255,255,255, .9),
   900:Color.fromRGBO(255,255,255, 1),
 };
-Socket socket = io('ws://18.170.67.126:4500', <String, dynamic>{
-  'autoConnect': false,
-  'transports': ['websocket'],
-});
 
 
 
 class ClipSync extends StatefulWidget {
-  const ClipSync({Key? key}) : super(key: key);
+  final Socket socket;
+
+  ClipSync({Key? key, required this.socket}) : super(key: key);
 
   @override
   State<ClipSync> createState() => _ClipSyncState();
 }
 
 class _ClipSyncState extends State<ClipSync> with ClipboardListener {
+  late Socket socket;
+
   @override
   void initState() {
+    socket = widget.socket;
+
     clipboardWatcher.addListener(this);
 
     socket.on('sync', (clip) {
@@ -76,7 +88,6 @@ class _ClipSyncState extends State<ClipSync> with ClipboardListener {
   void onClipboardChanged() async {
     ClipboardData? clip =
     await Clipboard.getData(Clipboard.kTextPlain);
-    print(clip?.text);
     socket.emit('copy', clip?.text);
   }
 }
