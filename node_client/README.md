@@ -12,8 +12,9 @@ It Synchronizees your clipboard content across devices in real-time!
 To install clipSync, you need to have Node.js and npm (Node Package Manager) installed on your system. Then, you can install clipSync via npm as follows:
 
 ```bash
-npm install -g clipsync
+npm i -g @0xugochukwu/clipsync
 ```
+NB: Use Super User/Adminstrator Access where necessary.
 
 
 ## Usage
