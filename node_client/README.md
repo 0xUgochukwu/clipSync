@@ -36,7 +36,7 @@ Contributions to clipSync are welcome! Feel free to open issues, submit pull req
 
 # Acknowledgements
 - The clipSync tool was developed by Ugochukwu Chukwuma.
-- Special thanks to Ikoro Samuel for their contributions to this project.
+- Special thanks to Ikoro Samuel for his contributions to this project.
 
 
 # Contact
